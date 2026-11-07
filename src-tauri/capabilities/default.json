@@ -1,0 +1,6 @@
+{
+  "identifier": "default",
+  "description": "Snowfall overlay: only needs to listen to events",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

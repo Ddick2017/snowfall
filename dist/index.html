@@ -1,0 +1,96 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>html,body{margin:0;background:transparent;overflow:hidden}canvas{display:block}</style>
+<canvas id="c"></canvas>
+<script>
+(() => {
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  let W = 0, H = 0;
+  const resize = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; };
+  resize(); addEventListener('resize', resize);
+
+  const N = 140;                       // number of flakes (RAM/CPU stays tiny)
+  let st = { cx: -9999, cy: -9999, fs: false, rects: [] };
+  let pcx = -9999, pcy = -9999, running = false, last = 0, flakes = [];
+
+  const mk = (initial) => ({
+    x: Math.random() * W, y: initial ? Math.random() * H : -8 - Math.random() * 60,
+    vx: 0, vy: 0, r: 1 + Math.random() * 2.2, landed: 0, life: 0
+  });
+  for (let i = 0; i < N; i++) flakes.push(mk(true));
+
+  // is point (x,y) hidden under any of the first n (higher) windows?
+  const covered = (x, y, n) => {
+    const R = st.rects;
+    for (let j = 0; j < n; j++) { const q = R[j];
+      if (x >= q[0] && x <= q[0] + q[2] && y >= q[1] && y <= q[1] + q[3]) return true; }
+    return false;
+  };
+  const stillOnSurface = (f) => {
+    const R = st.rects;
+    for (let i = 0; i < R.length; i++) { const q = R[i];
+      if (q[1] > 12 && f.x >= q[0] && f.x <= q[0] + q[2] && Math.abs(f.y - q[1]) <= 6 && !covered(f.x, q[1] + 1, i)) return true; }
+    return false;
+  };
+  const tryLand = (f, py, now) => {
+    const R = st.rects;
+    for (let i = 0; i < R.length; i++) { const q = R[i];
+      if (q[1] > 12 && py <= q[1] && f.y >= q[1] && f.x >= q[0] && f.x <= q[0] + q[2] && !covered(f.x, q[1] + 1, i)) {
+        f.y = q[1] - f.r * 0.5; f.vx = f.vy = 0; f.landed = now; f.life = 6000 + Math.random() * 9000; return true; } }
+    return false;
+  };
+
+  function frame(now) {
+    if (st.fs) { running = false; ctx.clearRect(0, 0, W, H); return; }   // fullscreen app -> stop completely
+    requestAnimationFrame(frame);
+    if (now - last < 33) return;                                           // ~30 fps cap
+    const dt = Math.min(0.06, (now - last) / 1000); last = now;
+    const wind = Math.sin(now / 4000) * 14;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(110,150,190,.55)'; ctx.lineWidth = 0.6;
+    for (const f of flakes) {
+      let alpha = 0.95;
+      if (f.landed) {
+        f.life -= dt * 1000;
+        if (!stillOnSurface(f)) f.landed = 0;                              // window moved away -> fall again
+        else if (f.life <= 0) { Object.assign(f, mk(false)); continue; }
+        else alpha = Math.min(0.95, f.life / 1500);
+      }
+      if (!f.landed) {
+        const k = Math.min(1, dt * 2), fall = 25 + f.r * 18, py = f.y;
+        f.vx += (wind - f.vx) * k; f.vy += (fall - f.vy) * k;
+        f.x += f.vx * dt; f.y += f.vy * dt;
+        if (f.vy > 0 && tryLand(f, py, now)) { /* landed */ }
+        else if (f.y > H + 10 || f.x < -40 || f.x > W + 40) { Object.assign(f, mk(false)); continue; }
+      }
+      ctx.globalAlpha = alpha;
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 6.2832); ctx.fill(); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+  function start() { if (running) return; running = true; last = performance.now(); requestAnimationFrame(frame); }
+
+  const tauri = window.__TAURI__;
+  if (tauri && tauri.event) {
+    tauri.event.listen('tick', (e) => {
+      const p = e.payload;
+      if (pcx > -9000 && !p.fs) {
+        const dx = p.cx - pcx, dy = p.cy - pcy;
+        if (dx * dx + dy * dy > 16) {                                      // mouse "swipe" pushes flakes
+          for (const f of flakes) {
+            const ax = f.x - p.cx, ay = f.y - p.cy;
+            if (ax * ax + ay * ay < 6400) {
+              f.vx += Math.max(-600, Math.min(600, dx * 15));
+              f.vy += Math.max(-600, Math.min(600, dy * 15));
+              f.landed = 0;
+            }
+          }
+        }
+      }
+      pcx = p.cx; pcy = p.cy; st = p;
+      if (!p.fs) start();
+    });
+  }
+  start();
+})();
+</script>

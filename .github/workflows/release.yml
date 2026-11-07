@@ -1,0 +1,86 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            args: ''
+            target: ''
+          - os: macos-latest
+            args: '--target aarch64-apple-darwin'
+            target: aarch64-apple-darwin
+          - os: macos-13
+            args: '--target x86_64-apple-darwin'
+            target: x86_64-apple-darwin
+          - os: windows-latest
+            args: ''
+            target: ''
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux system packages
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+      - name: Generate all icon sizes (.ico/.icns/.png) from app-icon.png
+        run: npx tauri icon app-icon.png
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Snowfall ${{ github.ref_name }}'
+          releaseBody: 'Installers: .deb / .AppImage (Linux), .dmg (macOS), .exe/.msi (Windows). Also .tar.gz (Linux) and portable .zip (Windows).'
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
+      - name: Linux .tar.gz
+        if: startsWith(matrix.os, 'ubuntu')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          d=snowfall-${{ github.ref_name }}-linux-x86_64
+          mkdir "$d"
+          cp src-tauri/target/release/snowfall "$d/"
+          cp scripts/install-linux.sh README.md LICENSE "$d/"
+          tar czf "$d.tar.gz" "$d"
+          gh release upload "${{ github.ref_name }}" "$d.tar.gz" --clobber
+
+      - name: Windows portable .zip
+        if: startsWith(matrix.os, 'windows')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $z = "snowfall-${{ github.ref_name }}-windows-x64-portable.zip"
+          Compress-Archive -Path src-tauri/target/release/snowfall.exe,README.md,LICENSE -DestinationPath $z
+          gh release upload "${{ github.ref_name }}" $z --clobber

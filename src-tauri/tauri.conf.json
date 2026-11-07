@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Snowfall",
+  "version": "0.1.0",
+  "identifier": "io.github.snowfall",
+  "build": { "frontendDist": "../dist" },
+  "app": {
+    "withGlobalTauri": true,
+    "macOSPrivateApi": true,
+    "security": { "csp": null },
+    "windows": [
+      {
+        "label": "main",
+        "title": "Snowfall",
+        "x": 0, "y": 0, "width": 800, "height": 600,
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "focus": false,
+        "visible": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Utility",
+    "shortDescription": "Snow overlay for your desktop",
+    "longDescription": "Lightweight falling-snow overlay. Snow lands on window title bars and the taskbar, can be swept away with the mouse, and turns off in fullscreen.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
