@@ -84,7 +84,13 @@ fn main() {
 
     // X11 (or XWayland) is needed for a transparent click-through overlay and window enumeration
     #[cfg(target_os = "linux")]
-    std::env::set_var("GDK_BACKEND", "x11");
+    {
+        std::env::set_var("GDK_BACKEND", "x11");
+        // avoids blank/crashing WebKit on NVIDIA and some other drivers
+        if std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
+            std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        }
+    }
 
     tauri::Builder::default()
         // a second launch does nothing (the running instance keeps going)
@@ -102,11 +108,12 @@ fn main() {
             win.set_position(*mon.position())?;
             // 1px shorter than the screen so Windows does not treat the overlay as a "fullscreen app"
             win.set_size(tauri::PhysicalSize::new(size.width, size.height.saturating_sub(1)))?;
+            // show() first: on Linux the GTK window must be realized before click-through can be set
+            win.show()?;
             win.set_ignore_cursor_events(true)?; // clicks pass through to the apps below
             win.set_always_on_top(true)?;
             win.set_skip_taskbar(true)?;
             let _ = win.set_visible_on_all_workspaces(true);
-            win.show()?;
 
             // ---- tray / menu-bar icon: pause, launch at login, quit ----
             let paused = Arc::new(AtomicBool::new(false));

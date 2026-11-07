@@ -1,6 +1,6 @@
 [package]
 name = "snowfall"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 description = "Snow overlay for the desktop"
 license = "MIT"

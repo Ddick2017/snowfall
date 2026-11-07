@@ -73,7 +73,7 @@ npx tauri icon app-icon.png   # создаёт иконки для всех пл
 npx tauri build               # установщики появятся в src-tauri/target/release/bundle/
 ```
 
-Если отправить в GitHub тег вида `v0.1.2`, GitHub Actions соберёт и опубликует все установщики (см. `.github/workflows/release.yml`).
+Если отправить в GitHub тег вида `v0.1.3`, GitHub Actions соберёт и опубликует все установщики (см. `.github/workflows/release.yml`).
 
 ## Известные ограничения
 

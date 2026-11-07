@@ -1,7 +1,7 @@
 {
   "name": "snowfall",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.3",
   "scripts": { "tauri": "tauri" },
   "devDependencies": { "@tauri-apps/cli": "^2" }
 }
