@@ -16,10 +16,10 @@ jobs:
           - os: ubuntu-22.04
             args: ''
             target: ''
-          - os: macos-latest
+          - os: macos-latest            # Apple Silicon
             args: '--target aarch64-apple-darwin'
             target: aarch64-apple-darwin
-          - os: macos-13
+          - os: macos-15-intel          # Intel Macs (macos-13 was retired by GitHub)
             args: '--target x86_64-apple-darwin'
             target: x86_64-apple-darwin
           - os: windows-latest
@@ -27,13 +27,14 @@ jobs:
             target: ''
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Linux system packages
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
+            patchelf libssl-dev libxdo-dev libx11-dev libxi-dev libxtst-dev libxkbcommon-dev libfuse2
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -43,9 +44,9 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
 
       - run: npm install
       - name: Generate all icon sizes (.ico/.icns/.png) from app-icon.png
@@ -54,10 +55,19 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPIMAGE_EXTRACT_AND_RUN: 1
+          NO_STRIP: true
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Snowfall ${{ github.ref_name }}'
-          releaseBody: 'Installers: .deb / .AppImage (Linux), .dmg (macOS), .exe/.msi (Windows). Also .tar.gz (Linux) and portable .zip (Windows).'
+          releaseBody: |
+            Falling-snow overlay for your desktop.
+
+            - **Windows 10/11:** `Snowfall_*_x64-setup.exe` / `.msi`, or the portable `.zip`
+            - **macOS:** `Snowfall_*_aarch64.dmg` (Apple Silicon), `Snowfall_*_x64.dmg` (Intel)
+            - **Linux:** `.deb`, `.AppImage`, or the `.tar.gz`
+
+            See the README for installation notes. The builds are not code-signed, so Windows SmartScreen / macOS Gatekeeper will ask for confirmation.
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

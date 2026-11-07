@@ -9,7 +9,7 @@
   const resize = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; };
   resize(); addEventListener('resize', resize);
 
-  const N = 140;                       // number of flakes (RAM/CPU stays tiny)
+  const TARGET = 380, MAX = 900;       // flakes in the air / hard cap incl. flakes resting on windows
   let st = { cx: -9999, cy: -9999, fs: false, rects: [] };
   let pcx = -9999, pcy = -9999, running = false, last = 0, flakes = [];
 
@@ -17,7 +17,7 @@
     x: Math.random() * W, y: initial ? Math.random() * H : -8 - Math.random() * 60,
     vx: 0, vy: 0, r: 1 + Math.random() * 2.2, landed: 0, life: 0
   });
-  for (let i = 0; i < N; i++) flakes.push(mk(true));
+  for (let i = 0; i < TARGET; i++) flakes.push(mk(true));
 
   // is point (x,y) hidden under any of the first n (higher) windows?
   const covered = (x, y, n) => {
@@ -36,16 +36,17 @@
     const R = st.rects;
     for (let i = 0; i < R.length; i++) { const q = R[i];
       if (q[1] > 12 && py <= q[1] && f.y >= q[1] && f.x >= q[0] && f.x <= q[0] + q[2] && !covered(f.x, q[1] + 1, i)) {
-        f.y = q[1] - f.r * 0.5; f.vx = f.vy = 0; f.landed = now; f.life = 6000 + Math.random() * 9000; return true; } }
+        f.y = q[1] - f.r * 0.5; f.vx = f.vy = 0; f.landed = now; f.life = 45000 + Math.random() * 75000; return true; } }
     return false;
   };
 
   function frame(now) {
-    if (st.fs) { running = false; ctx.clearRect(0, 0, W, H); return; }   // fullscreen app -> stop completely
+    if (st.fs || st.paused) { running = false; ctx.clearRect(0, 0, W, H); return; }   // fullscreen app -> stop completely
     requestAnimationFrame(frame);
     if (now - last < 33) return;                                           // ~30 fps cap
     const dt = Math.min(0.06, (now - last) / 1000); last = now;
     const wind = Math.sin(now / 4000) * 14;
+    let falling = 0;
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(110,150,190,.55)'; ctx.lineWidth = 0.6;
     for (const f of flakes) {
@@ -54,7 +55,7 @@
         f.life -= dt * 1000;
         if (!stillOnSurface(f)) f.landed = 0;                              // window moved away -> fall again
         else if (f.life <= 0) { Object.assign(f, mk(false)); continue; }
-        else alpha = Math.min(0.95, f.life / 1500);
+        else alpha = Math.min(0.95, f.life / 4000);
       }
       if (!f.landed) {
         const k = Math.min(1, dt * 2), fall = 25 + f.r * 18, py = f.y;
@@ -63,10 +64,13 @@
         if (f.vy > 0 && tryLand(f, py, now)) { /* landed */ }
         else if (f.y > H + 10 || f.x < -40 || f.x > W + 40) { Object.assign(f, mk(false)); continue; }
       }
+      if (!f.landed) falling++;
       ctx.globalAlpha = alpha;
       ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 6.2832); ctx.fill(); ctx.stroke();
     }
     ctx.globalAlpha = 1;
+    // keep the sky full even while many flakes rest on windows
+    for (let n = Math.min(8, TARGET - falling); n > 0 && flakes.length < MAX; n--) flakes.push(mk(false));
   }
   function start() { if (running) return; running = true; last = performance.now(); requestAnimationFrame(frame); }
 
@@ -74,7 +78,7 @@
   if (tauri && tauri.event) {
     tauri.event.listen('tick', (e) => {
       const p = e.payload;
-      if (pcx > -9000 && !p.fs) {
+      if (pcx > -9000 && !p.fs && !p.paused) {
         const dx = p.cx - pcx, dy = p.cy - pcy;
         if (dx * dx + dy * dy > 16) {                                      // mouse "swipe" pushes flakes
           for (const f of flakes) {
@@ -88,7 +92,7 @@
         }
       }
       pcx = p.cx; pcy = p.cy; st = p;
-      if (!p.fs) start();
+      if (!p.fs && !p.paused) start();
     });
   }
   start();
