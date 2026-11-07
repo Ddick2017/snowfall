@@ -51,7 +51,8 @@ fn init() -> Option<X> {
 
 fn prop(x: &X, w: Window, p: u32, ty: AtomEnum, len: u32) -> Option<Vec<u32>> {
     let r = x.c.get_property(false, w, p, ty, 0, len).ok()?.reply().ok()?;
-    Some(r.value32()?.collect())
+    let v: Vec<u32> = r.value32()?.collect();
+    Some(v)
 }
 
 fn first(v: Option<Vec<u32>>) -> Option<u32> {

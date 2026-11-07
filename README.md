@@ -73,7 +73,7 @@ npx tauri icon app-icon.png   # generates the platform icons
 npx tauri build               # installers end up in src-tauri/target/release/bundle/
 ```
 
-Pushing a tag such as `v0.1.1` makes GitHub Actions build and publish all installers (see `.github/workflows/release.yml`).
+Pushing a tag such as `v0.1.2` makes GitHub Actions build and publish all installers (see `.github/workflows/release.yml`).
 
 ## Known limitations
 
