@@ -21,7 +21,7 @@ Snowfall — независимый проект, вдохновлённый mac
 | Windows 10 / 11 | `Snowfall_*_x64-setup.exe`, `Snowfall_*_x64_en-US.msi` или `snowfall-*-windows-x64-portable.zip` |
 | macOS (Apple Silicon) | `Snowfall_*_aarch64.dmg` |
 | macOS (Intel) | `Snowfall_*_x64.dmg` |
-| Linux (Debian / Ubuntu) | `snowfall_*_amd64.deb` |
+| Linux (Debian / Ubuntu) | `Snowfall_*_amd64.deb` |
 | Linux (любой дистрибутив) | `Snowfall_*_amd64.AppImage` или `snowfall-*-linux-x86_64.tar.gz` |
 
 Сборки не подписаны сертификатом, поэтому при первом запуске система попросит подтверждение.
@@ -36,7 +36,7 @@ Snowfall — независимый проект, вдохновлённый mac
 xattr -dr com.apple.quarantine /Applications/Snowfall.app
 ```
 
-**Debian / Ubuntu** — `sudo apt install ./snowfall_*_amd64.deb`, затем запустите *Snowfall* из меню приложений.
+**Debian / Ubuntu** — `sudo apt install ./Snowfall_*_amd64.deb`, затем запустите *Snowfall* из меню приложений.
 
 **AppImage** — `chmod +x Snowfall_*.AppImage && ./Snowfall_*.AppImage`
 
@@ -73,7 +73,7 @@ npx tauri icon app-icon.png   # создаёт иконки для всех пл
 npx tauri build               # установщики появятся в src-tauri/target/release/bundle/
 ```
 
-Если отправить в GitHub тег вида `v0.1.3`, GitHub Actions соберёт и опубликует все установщики (см. `.github/workflows/release.yml`).
+Если отправить в GitHub тег вида `v0.1.5`, GitHub Actions соберёт и опубликует все установщики (см. `.github/workflows/release.yml`).
 
 ## Известные ограничения
 
@@ -81,6 +81,10 @@ npx tauri build               # установщики появятся в src-t
 - **Linux:** нужен X11 или XWayland (Snowfall сам выставляет `GDK_BACKEND=x11`). В чистом Wayland-сеансе курсор и окна видны только для X11-приложений. GNOME по умолчанию не показывает значки в трее: установите расширение *AppIndicator* или останавливайте командой `snowfall --quit`.
 - **macOS:** система может не пускать оверлей на полосу меню.
 - Потребление памяти определяется системным WebView (обычно несколько десятков МБ).
+
+## Если что-то не так
+
+Запустите в терминале `SNOWFALL_DEBUG=1 snowfall`: раз в секунду будут печататься найденные окна (x, y, ширина, высота).
 
 ## Лицензия
 

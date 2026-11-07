@@ -114,6 +114,20 @@ fn main() {
             win.set_always_on_top(true)?;
             win.set_skip_taskbar(true)?;
             let _ = win.set_visible_on_all_workspaces(true);
+            // Linux: WebKit has its own X sub-window, so also make every GTK widget click-through
+            #[cfg(target_os = "linux")]
+            if let Ok(gw) = win.gtk_window() {
+                use gtk::prelude::*;
+                fn click_through(w: &gtk::Widget) {
+                    w.input_shape_combine_region(Some(&gtk::cairo::Region::create()));
+                    if let Some(c) = w.downcast_ref::<gtk::Container>() {
+                        for child in c.children() {
+                            click_through(&child);
+                        }
+                    }
+                }
+                click_through(gw.upcast_ref::<gtk::Widget>());
+            }
 
             // ---- tray / menu-bar icon: pause, launch at login, quit ----
             let paused = Arc::new(AtomicBool::new(false));
@@ -151,6 +165,7 @@ fn main() {
             let own = std::process::id();
             thread::spawn(move || {
                 let ds = DeviceState::new();
+                let debug = std::env::var_os("SNOWFALL_DEBUG").is_some();
                 let (mut rects, mut fs, mut n) = (Vec::<[f64; 4]>::new(), false, 0u32);
                 loop {
                     let is_paused = paused.load(Ordering::Relaxed);
@@ -164,6 +179,9 @@ fn main() {
                         fs = s.fullscreen;
                     }
                     n = n.wrapping_add(1);
+                    if debug && n % 30 == 0 {
+                        eprintln!("fullscreen={fs} rects={rects:?}");
+                    }
                     let (x, y) = ds.get_mouse().coords;
                     let _ = handle.emit(
                         "tick",

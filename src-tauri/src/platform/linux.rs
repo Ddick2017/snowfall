@@ -17,6 +17,10 @@ struct X {
     curdesk: u32,
     frame: u32,
     workarea: u32,
+    wtype: u32,
+    normal: u32,
+    dialog: u32,
+    skip_taskbar: u32,
     c: RustConnection,
 }
 
@@ -45,6 +49,10 @@ fn init() -> Option<X> {
         curdesk: atom(&c, "_NET_CURRENT_DESKTOP")?,
         frame: atom(&c, "_NET_FRAME_EXTENTS")?,
         workarea: atom(&c, "_NET_WORKAREA")?,
+        wtype: atom(&c, "_NET_WM_WINDOW_TYPE")?,
+        normal: atom(&c, "_NET_WM_WINDOW_TYPE_NORMAL")?,
+        dialog: atom(&c, "_NET_WM_WINDOW_TYPE_DIALOG")?,
+        skip_taskbar: atom(&c, "_NET_WM_STATE_SKIP_TASKBAR")?,
         c,
     })
 }
@@ -79,6 +87,14 @@ fn query(x: &X, own: u32) -> Option<Snapshot> {
         }
         if st.contains(&x.fullscreen) {
             snap.fullscreen = true;
+            continue;
+        }
+        // only real application windows: skips the desktop-icons layer, docks, panels, our own helpers
+        let ty = prop(x, w, x.wtype, AtomEnum::ATOM, 8).unwrap_or_default();
+        if !ty.is_empty() && !ty.iter().any(|a| *a == x.normal || *a == x.dialog) {
+            continue;
+        }
+        if st.contains(&x.skip_taskbar) {
             continue;
         }
         let Some(g) = x.c.get_geometry(w).ok().and_then(|c| c.reply().ok()) else { continue };

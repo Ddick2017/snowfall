@@ -21,7 +21,7 @@ Grab the latest build from the [Releases page](../../releases/latest).
 | Windows 10 / 11 | `Snowfall_*_x64-setup.exe`, `Snowfall_*_x64_en-US.msi`, or `snowfall-*-windows-x64-portable.zip` |
 | macOS (Apple Silicon) | `Snowfall_*_aarch64.dmg` |
 | macOS (Intel) | `Snowfall_*_x64.dmg` |
-| Linux (Debian / Ubuntu) | `snowfall_*_amd64.deb` |
+| Linux (Debian / Ubuntu) | `Snowfall_*_amd64.deb` |
 | Linux (any distribution) | `Snowfall_*_amd64.AppImage` or `snowfall-*-linux-x86_64.tar.gz` |
 
 The builds are not code-signed, so your OS will ask for confirmation the first time.
@@ -36,7 +36,7 @@ The builds are not code-signed, so your OS will ask for confirmation the first t
 xattr -dr com.apple.quarantine /Applications/Snowfall.app
 ```
 
-**Debian / Ubuntu** – `sudo apt install ./snowfall_*_amd64.deb`, then start *Snowfall* from your application menu.
+**Debian / Ubuntu** – `sudo apt install ./Snowfall_*_amd64.deb`, then start *Snowfall* from your application menu.
 
 **AppImage** – `chmod +x Snowfall_*.AppImage && ./Snowfall_*.AppImage`
 
@@ -73,7 +73,7 @@ npx tauri icon app-icon.png   # generates the platform icons
 npx tauri build               # installers end up in src-tauri/target/release/bundle/
 ```
 
-Pushing a tag such as `v0.1.3` makes GitHub Actions build and publish all installers (see `.github/workflows/release.yml`).
+Pushing a tag such as `v0.1.5` makes GitHub Actions build and publish all installers (see `.github/workflows/release.yml`).
 
 ## Known limitations
 
@@ -81,6 +81,10 @@ Pushing a tag such as `v0.1.3` makes GitHub Actions build and publish all instal
 - **Linux:** needs X11 or XWayland (Snowfall sets `GDK_BACKEND=x11` itself). On a pure Wayland session, the cursor and windows are only visible for X11 apps. GNOME does not show tray icons by default; install the *AppIndicator* extension, or use `snowfall --quit` to stop it.
 - **macOS:** the system may keep the overlay below the menu bar.
 - Memory use is dominated by the system WebView (typically tens of MB).
+
+## Troubleshooting
+
+Run `SNOWFALL_DEBUG=1 snowfall` in a terminal to print the windows Snowfall detects (x, y, width, height) about once a second.
 
 ## License
 
